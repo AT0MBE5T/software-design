@@ -37,7 +37,7 @@
       <item>
        <widget class="QPushButton" name="triangleButton">
         <property name="text">
-         <string>Трикутни</string>
+         <string>Трикутник</string>
         </property>
        </widget>
       </item>
