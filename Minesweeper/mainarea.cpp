@@ -10,15 +10,11 @@ MainArea::MainArea(QWidget *parent)
 {
     ui->setupUi(this);
     StyleHandler::setFonts();
-    setStyles();
     Language::readLangs();
     Language::setIndexes();
-    setLanguage(&Language::getUkrLanguage());
-    ui->logoLabel->setStyleSheet("image: url(:/img/img/logo.png);");
-    ui->langChoice->addItem(QIcon(":/img/img/ukrFlag.png"), "");
-    ui->langChoice->addItem(QIcon(":/img/img/usaFlag.png"), "");
+    setStyles();
+    setDefaultWindow();
     setText();
-    this->setWindowIcon(QIcon(":/img/img/logo.png"));
     setConnects();
 }
 
@@ -45,6 +41,15 @@ void MainArea::setConnects()
     connect(ui->exitButton, &QPushButton::clicked, this, [&](){
         this->close();
     });
+}
+
+void MainArea::setDefaultWindow()
+{
+    setLanguage(&Language::getUkrLanguage());
+    ui->logoLabel->setStyleSheet("image: url(:/img/img/logo.png);");
+    ui->langChoice->addItem(QIcon(":/img/img/ukrFlag.png"), "");
+    ui->langChoice->addItem(QIcon(":/img/img/usaFlag.png"), "");
+    this->setWindowIcon(QIcon(":/img/img/logo.png"));
 }
 
 MainArea::~MainArea()

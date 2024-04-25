@@ -15,12 +15,13 @@ class Rules : public QDialog
 
 public:
     explicit Rules(QWidget *parent = nullptr);
-    void setText();
-    void setStyles();
     void setLanguage(QVector<QString>* _lang);
+    void setText();
     ~Rules();
 
 private:
+    void setStyles();
+
     Ui::Rules *ui;
     QVector<QString>* lang;
     const int rulesStart = 6;

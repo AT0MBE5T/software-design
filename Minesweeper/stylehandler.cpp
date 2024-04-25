@@ -1,7 +1,10 @@
 #include "stylehandler.h"
+#include <QBuffer>
 #include <QFontDatabase>
+#include <QDebug>
 
 StyleHandler::StyleHandler() {}
+
 
 QString StyleHandler::getDefaultCellStyle()
 {
@@ -22,94 +25,64 @@ QString StyleHandler::getZeroMinesStyle()
            "}";
 }
 
-QString StyleHandler::getOneMineStyle()
+QPixmap StyleHandler::getOneMineStyle()
 {
-    return "QPushButton{"
-           "background-color: #CDCDCD;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/one.png);"
-           "}";
+    static QPixmap icon(":/img/img/one.png");
+    return icon;
 }
 
-QString StyleHandler::getTwoMinesStyle()
+QPixmap StyleHandler::getTwoMinesStyle()
 {
-    return "QPushButton{"
-           "background-color: #CDCDCD;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/two.png);"
-           "}";
+    static QPixmap icon(":/img/img/two.png");
+    return icon;
 }
 
-QString StyleHandler::getThreeMinesStyle()
+QPixmap StyleHandler::getThreeMinesStyle()
 {
-    return "QPushButton{"
-           "background-color: #CDCDCD;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/three.png);"
-           "}";
+    static QPixmap icon(":/img/img/three.png");
+    return icon;
 }
 
-QString StyleHandler::getFourMinesStyle()
+QPixmap StyleHandler::getFourMinesStyle()
 {
-    return "QPushButton{"
-           "background-color: #CDCDCD;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/four.png);"
-           "}";
+    static QPixmap icon(":/img/img/four.png");
+    return icon;
 }
 
-QString StyleHandler::getFiveMinesStyle()
+QPixmap StyleHandler::getFiveMinesStyle()
 {
-    return "QPushButton{"
-           "background-color: #CDCDCD;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/five.png);"
-           "}";
+    static QPixmap icon(":/img/img/five.png");
+    return icon;
 }
 
-QString StyleHandler::getSixMinesStyle()
+QPixmap StyleHandler::getSixMinesStyle()
 {
-    return "QPushButton{"
-           "background-color: #CDCDCD;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/six.png);"
-           "}";
+    static QPixmap icon(":/img/img/six.png");
+    return icon;
 }
 
-QString StyleHandler::getSevenMinesStyle()
+QPixmap StyleHandler::getSevenMinesStyle()
 {
-    return "QPushButton{"
-           "background-color: #CDCDCD;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/seven.png);"
-           "}";
+    static QPixmap icon(":/img/img/seven.png");
+    return icon;
 }
 
-QString StyleHandler::getEightMinesStyle()
+QPixmap StyleHandler::getEightMinesStyle()
 {
-    return "QPushButton{"
-           "background-color: #CDCDCD;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/eight.png);"
-           "}";
+    static QPixmap icon(":/img/img/eight.png");
+    return icon;
 }
 
-QString StyleHandler::getMineStyle()
+QPixmap StyleHandler::getMineStyle()
 {
-    return "QPushButton{"
-           "background-color: #CDCDCD;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/bomb.png);"
-           "}";
+    static QPixmap icon(":/img/img/bomb.png");
+    return icon;
 }
 
-QString StyleHandler::getFlagStyle()
+QPixmap StyleHandler::getFlagStyle()
 {
-    return "QPushButton{"
-           "background-color: #f0f0f0;"
-           "border: 1px solid #a0a0a0;"
-           "image: url(:/img/img/flag.png);"
-           "}";
+    static QPixmap icon(":/img/img/flag.png");
+    return icon;
 }
 
 QString StyleHandler::getSmileStyle()
@@ -145,7 +118,7 @@ QString StyleHandler::getButtonStyle()
             "background-color: #DF7651;"
             "border-radius: 10%;"
             "color: white;"
-            "font-size: 45px;"
+            "font-size: 40px;"
             "font-weight: bold;"
             "text-align: center;"
             "text-decoration: none;"

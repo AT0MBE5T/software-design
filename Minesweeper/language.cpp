@@ -10,18 +10,16 @@ void Language::readLangs()
     QFile file(":/lang/localization/ukr.txt");
     if(file.open(QIODevice::ReadOnly)){
         QTextStream text(&file);
-        while(!text.atEnd()){
+        while(!text.atEnd())
             ukrLang.push_back(text.readLine());
-        }
     }
     file.close();
 
     file.setFileName(":/lang/localization/eng.txt");
     if(file.open(QIODevice::ReadOnly)){
         QTextStream text(&file);
-        while(!text.atEnd()){
+        while(!text.atEnd())
             engLang.push_back(text.readLine());
-        }
     }
     file.close();
 }

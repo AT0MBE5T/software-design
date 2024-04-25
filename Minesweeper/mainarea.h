@@ -21,8 +21,6 @@ class MainArea : public QMainWindow
 
 public:
     MainArea(QWidget *parent = nullptr);
-    void setLanguage(QVector<QString>* _currentLang);
-    void setText();
     ~MainArea();
 
 private slots:
@@ -32,7 +30,11 @@ private slots:
     void setStyles();
 
 private:
+    void setLanguage(QVector<QString>* _currentLang);
+    void setText();
     void setConnects();
+    void setDefaultWindow();
+
     Ui::MainArea *ui;
     QVector<QString>* currentLang;
     Rules* rules;

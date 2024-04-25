@@ -23,8 +23,6 @@ void Cell::setOpen(bool _isOpen)
 
 Cell::Cell() : isMine(false), isFlag(false), adjacentMines(-1), isOpen(false), location(Coordinate{-1, -1}) {}
 
-Cell::Cell(Coordinate _location) : isMine(false), isFlag(false), adjacentMines(-1), isOpen(false), location(_location) {}
-
 int Cell::getAdjacentMines()
 {
     return adjacentMines;
@@ -58,14 +56,12 @@ void Cell::setLocation(Coordinate _cord)
 bool Cell::openCell(QPushButton* _btn)
 {
     isOpen=true;
-    QString style;
+    QPixmap style;
     if(isMine){
-        style=StyleHandler::getMineStyle();
+        setStyle(_btn, StyleHandler::getMineStyle());
+        return true;
     }
     switch(adjacentMines){
-    case 0:
-        style=StyleHandler::getZeroMinesStyle();
-        break;
     case 1:
         style=StyleHandler::getOneMineStyle();
         break;
@@ -95,7 +91,14 @@ bool Cell::openCell(QPushButton* _btn)
     return true;
 }
 
-void Cell::setStyle(QPushButton* _btn, const QString &_style)
+void Cell::setStyle(QPushButton* _btn, const QPixmap &_style)
 {
-    _btn->setStyleSheet(_style);
+    _btn->setStyleSheet(StyleHandler::getZeroMinesStyle());
+    _btn->setIcon(QIcon(_style));
+    _btn->setIconSize(_btn->size());
+}
+
+bool Cell::operator !=(const Cell &_cell)
+{
+    return location.x != _cell.location.x && location.y != _cell.location.y;
 }

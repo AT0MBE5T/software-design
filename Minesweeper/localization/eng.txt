@@ -33,7 +33,7 @@ Congratulations! You won!
 Unfortunately, you lost
 Do you want to save the current field?
 Exit without saving
-Back to menu
+Menu
 Cancel
 The first move must start with the opening of the cell
 New field without saving

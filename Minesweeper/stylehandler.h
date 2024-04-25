@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QPixmap>
+#include "QIcon"
 
 class StyleHandler
 {
@@ -10,17 +11,18 @@ public:
     StyleHandler();
     static QString getDefaultCellStyle();
     static QString getZeroMinesStyle();
-    static QString getOneMineStyle();
-    static QString getTwoMinesStyle();
-    static QString getThreeMinesStyle();
-    static QString getFourMinesStyle();
-    static QString getFiveMinesStyle();
-    static QString getSixMinesStyle();
-    static QString getSevenMinesStyle();
-    static QString getEightMinesStyle();
-    static QString getNineMinesStyle();
-    static QString getMineStyle();
-    static QString getFlagStyle();
+    static QPixmap getOneMineStyle();
+    static QPixmap getTwoMinesStyle();
+    static QPixmap getThreeMinesStyle();
+    static QPixmap getFourMinesStyle();
+    static QPixmap getFiveMinesStyle();
+    static QPixmap getSixMinesStyle();
+    static QPixmap getSevenMinesStyle();
+    static QPixmap getEightMinesStyle();
+    static QPixmap getNineMinesStyle();
+    static QPixmap getMineStyle();
+    static QPixmap getFlagStyle();
+
     static QString getSmileStyle();
     static QString getLoseSmileStyle();
     static QString getTimerStyle();
@@ -33,7 +35,9 @@ public:
     static QString getInputStyle();
     static QString getBGStyle();
 
+    static void setImgs();
     static void setFonts();
+
 };
 
 #endif // STYLEHANDLER_H

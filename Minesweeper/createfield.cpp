@@ -11,7 +11,6 @@ CreateField::CreateField(QWidget *parent)
 {
     ui->setupUi(this);
     setStyles();
-    this->setWindowIcon(QIcon(":/img/img/logo.png"));
     setValidators();
     setConnects();
 }
@@ -35,9 +34,7 @@ void CreateField::setText()
 
 void CreateField::setDefaultSettings()
 {
-    ui->heightInput->clear();
-    ui->minesInput->clear();
-    ui->widthInput->clear();
+    clearInputs();
     ui->defaultSizes->setCurrentIndex(0);
     setStateByCreateNew(false);
 }
@@ -83,18 +80,65 @@ void CreateField::setStyles()
     ui->widthInput->setStyleSheet(StyleHandler::getInputStyle());
     ui->minesInput->setStyleSheet(StyleHandler::getInputStyle());
     this->setStyleSheet(StyleHandler::getBGStyle());
+    this->setWindowIcon(QIcon(":/img/img/logo.png"));
 }
 
 void CreateField::setConnects()
 {
     connect(ui->createButton, &QPushButton::clicked, this, &CreateField::createButtonClicked);
-    connect(ui->defaultSizes, &QComboBox::activated, this, &CreateField::selectDefaultSize);
+    connect(ui->defaultSizes, &QComboBox::activated, this, &CreateField::selectDefaultSizes);
     connect(ui->createNewBtn, &QPushButton::clicked, this, [&](){
         setStateByCreateNew(true);
     });
     connect(ui->readFileBtn, &QPushButton::clicked, this, [&](){
         setStateByCreateNew(false);
     });
+}
+
+bool CreateField::checkInputs(int _rows, int _cols, int _mines)
+{
+    int maxMines = std::ceil(_rows*_cols*maxMinesRatio);
+    int minMines = std::ceil(_rows*_cols*minMinesRatio);
+    QList<QScreen *> screens = QGuiApplication::screens();
+    int width = screens[0]->geometry().width();
+    int height = screens[0]->geometry().height();
+
+    maxRows = std::floor(height/50-5);
+    maxCols = std::floor(width/50-5);
+
+    if((_rows < minSize || _rows > maxRows) || (_cols < minSize || _cols > maxCols)){
+        QMessageBox::warning(this, lang->at(Language::getIndex("mineSweeper")), lang->at(Language::getIndex("wrongSize")) + ' ' + QString::number(minSize) + "x" + QString::number(minSize) + " - " + QString::number(maxRows) + "x" + QString::number(maxCols));
+        return false;
+    }
+    if(maxMines < _mines || minMines > _mines){
+        QMessageBox::warning(this, lang->at(Language::getIndex("mineSweeper")), lang->at(Language::getIndex("wrongMines")) + ' ' + QString::number(minMines) + " - " + QString::number(maxMines));
+        return false;
+    }
+    return true;
+}
+
+void CreateField::fillInputs(const QString &_width, const QString &_height, const QString &_mines)
+{
+    ui->widthInput->setText(_width);
+    ui->heightInput->setText(_height);
+    ui->minesInput->setText(_mines);
+}
+
+bool CreateField::readField(int& _rows, int& _cols, int& _mines)
+{
+    Field field;
+    try{
+        field = gameArea->readMatrixFromFile();
+    }catch(const QString& e){
+        QMessageBox::critical(this, lang->at(Language::getIndex("mineSweeper")), e);
+        mainArea->show();
+        return false;
+    }
+    _rows = field.getRows();
+    _cols = field.getCols();
+    _mines = field.getMines();
+    gameArea->setReadField(field);
+    return true;
 }
 
 CreateField::~CreateField()
@@ -104,54 +148,40 @@ CreateField::~CreateField()
     delete ui;
 }
 
-void CreateField::selectDefaultSize(int _index)
+void CreateField::selectDefaultSizes(int _index)
 {
     if(!_index)return;
     const int widthIndex = 0;
     const int heightIndex = 2;
     const int minesIndex = 4;
     QStringList element = ui->defaultSizes->currentText().split(" ", Qt::SkipEmptyParts);
-    ui->widthInput->setText(element[widthIndex]);
-    ui->heightInput->setText(element[heightIndex]);
-    ui->minesInput->setText(element[minesIndex]);
+    fillInputs(element[widthIndex], element[heightIndex], element[minesIndex]);
 }
-
 
 void CreateField::createButtonClicked()
 {
-    Field field;
-    if(isCreateNew){
-        int rows = ui->widthInput->text().toInt();
-        int cols = ui->heightInput->text().toInt();
-        if((rows < minSize || rows > maxSize) || (cols < minSize || cols > maxSize)){
-            QMessageBox::warning(this, lang->at(Language::getIndex("mineSweeper")), lang->at(Language::getIndex("wrongSize")) + ' ' + QString::number(minSize) + " - " + QString::number(maxSize));
-            return;
-        }
-        if(rows*cols*maxMinesRatio < ui->minesInput->text().toInt() || rows*cols*minMinesRatio > ui->minesInput->text().toInt()){
-            QMessageBox::warning(this, lang->at(Language::getIndex("mineSweeper")), lang->at(Language::getIndex("wrongMines")) + ' ' + QString::number(minMinesRatio*100) + "% - " + QString::number(maxMinesRatio*100) + '%');
-            return;
-        }
-    }
+    int rows = ui->widthInput->text().toInt();
+    int cols = ui->heightInput->text().toInt();
+    int mines = ui->minesInput->text().toInt();
+    if(isCreateNew && !checkInputs(ui->widthInput->text().toInt(), ui->heightInput->text().toInt(), ui->minesInput->text().toInt()))
+        return;
     this->close();
     mainArea->hide();
     if(!gameArea) gameArea = new GameArea;
     gameArea->setLang(lang);
-    if(!isCreateNew){
-        try{
-            field = gameArea->readMatrixFromFile();
-        }catch(const QString& e){
-            QMessageBox::critical(this, lang->at(Language::getIndex("mineSweeper")), e);
-            mainArea->show();
-            return;
-        }
-        gameArea->setFieldParams(field.getRows(), field.getCols(), field.getMines());
-        gameArea->setField(field,true);
-    }
-    else gameArea->setFieldParams(ui->widthInput->text().toInt(), ui->heightInput->text().toInt(), ui->minesInput->text().toInt());
+    if(!isCreateNew && !readField(rows, cols, mines))return;
+    gameArea->setFieldParams(rows, cols, mines);
     gameArea->setDefaultSettings();
     gameArea->spawnField();
     gameArea->setMainAreaPointer(mainArea);
     QMessageBox::information(this, lang->at(Language::getIndex("mineSweeper")), lang->at(Language::getIndex("fieldCreated")));
     gameArea->show();
+}
+
+void CreateField::clearInputs()
+{
+    ui->heightInput->clear();
+    ui->minesInput->clear();
+    ui->widthInput->clear();
 }
 

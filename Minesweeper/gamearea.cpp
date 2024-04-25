@@ -1,6 +1,7 @@
 #include "gamearea.h"
 #include "ui_gamearea.h"
 #include "mainarea.h"
+#include "QScreen"
 
 GameArea::GameArea(QWidget *parent)
     : QWidget(parent)
@@ -10,7 +11,6 @@ GameArea::GameArea(QWidget *parent)
     , isRead(false)
 {
     ui->setupUi(this);
-    this->setWindowIcon(QIcon(":/img/img/logo.png"));
     setConnects();
     setCounters();
     setStyles();
@@ -21,35 +21,28 @@ void GameArea::setLang(QVector<QString> *_lang)
     lang = _lang;
 }
 
-void GameArea::setField(Field _field, bool _isRead)
+void GameArea::setReadField(Field _field)
 {
     field = _field;
-    if(_isRead){
-        isRead=true;
-    }else{
-        field.fillFieldWithNumbers();
-    }
+    isRead=true;
 }
 
 void GameArea::spawnField()
-{    
+{
     defaultButtonsArray();
-    ui->playField->setVerticalSpacing(0);
-    ui->playField->setHorizontalSpacing(0);
     QPushButton* tempBtn;
-    for(int i = 0; i < rows; ++i){
+    for(int i = 0; i < rows; ++i)
         for(int j = 0; j < cols; ++j){
             tempBtn = new QPushButton;
-            tempBtn->setStyleSheet(StyleHandler::getDefaultCellStyle());
-            tempBtn->setSizePolicy(getButtonPolicy());
+            buttonSettings(tempBtn);
             buttons[i].push_back(tempBtn);
             ui->playField->addWidget(tempBtn, i, j);
             tempBtn->setProperty("X", i);
             tempBtn->setProperty("Y", j);
             connect(tempBtn, &QPushButton::clicked, this, &GameArea::cellClick);
         }
-    }
     if(isRead)openReadCells();
+    centerWindow();
     tempBtn=nullptr;
 }
 
@@ -106,15 +99,101 @@ void GameArea::setText()
     ui->backToMenuButton->setText(lang->at(Language::getIndex("backToMenu")));
 }
 
+void GameArea::centerWindow(const QPoint& _point)
+{
+    this->hide();
+    this->show();
+    this->resize(0, 0);
+    this->setFixedSize(this->size());
+    int widthGrid = ui->playField->sizeHint().width();
+    int heightGrid = ui->playField->sizeHint().height();
+    QScreen *screen = QGuiApplication::primaryScreen();
+    QRect screenGeometry = screen->geometry();
+    int x = std::abs(screenGeometry.center().x()-widthGrid/2);
+    int y = std::abs(screenGeometry.center().y()-heightGrid/1.5);
+    this->move(x, y);
+    if(_point!=QPoint())this->move(_point.x(), _point.y());
+}
+
+void GameArea::buttonSettings(QPushButton* _btn)
+{
+    _btn->setStyleSheet(StyleHandler::getDefaultCellStyle());
+    _btn->setSizePolicy(getButtonPolicy());
+    _btn->setFixedSize(buttonSize,buttonSize);
+}
+
+QMessageBox* GameArea::getThreeButtonWindow(const QString& _text, const QString& _btnNameFirst, const QString& _btnNameSecond, const QString& _btnNameThird)
+{
+    QMessageBox* msgBox = new QMessageBox;
+    msgBox->setWindowIcon(QIcon(":/img/img/logo.png"));
+    msgBox->setWindowTitle(lang->at(Language::getIndex("mineSweeper")));
+    msgBox->setText(_text);
+    msgBox->addButton(_btnNameFirst, QMessageBox::ActionRole);
+    msgBox->addButton(_btnNameSecond, QMessageBox::ActionRole);
+    msgBox->addButton(_btnNameThird, QMessageBox::ActionRole);
+    return msgBox;
+}
+
+QVector<Cell> GameArea::getRow(const QStringList& _rowString, int _currentRow, int _cols, int& _mines)
+{
+    QVector<Cell> row;
+    for(int i = 0; i < _cols; ++i)
+        row.push_back(getCell(_rowString[i], _currentRow, i, _mines));
+    return row;
+}
+
+Cell GameArea::getCell(const QString& _cellString, int _currentRow, int _currentCol, int& _mines)
+{
+    const int flagIndex = 2;
+    const int openIndex = 4;
+    const int adjacentMinesIndex = 0;
+    const int bombStringSize = 6;
+    const int noBombStringSize = 5;
+    Cell tempCell;
+    QChar tempChr;
+    tempCell.setLocation({_currentRow, _currentCol});
+    if(_cellString.size() < noBombStringSize || _cellString.size() > bombStringSize) throw QString(lang->at(Language::getIndex("readingError")));
+    if(_cellString.size()==bombStringSize){
+        tempCell.setAdjacentMines(-1);
+        tempCell.setMine(true);
+        tempChr = _cellString[flagIndex+1];
+        if(!tempChr.isDigit()) throw QString(lang->at(Language::getIndex("readingError")));
+        tempCell.setFlag(tempChr.digitValue());
+        tempChr = _cellString[openIndex+1];
+        if(!tempChr.isDigit()) throw QString(lang->at(Language::getIndex("readingError")));
+        tempCell.setOpen(tempChr.digitValue());
+        _mines++;
+    }else{
+        tempChr = _cellString[adjacentMinesIndex];
+        if(!tempChr.isDigit()) throw QString(lang->at(Language::getIndex("readingError")));
+        tempCell.setAdjacentMines(tempChr.digitValue());
+        tempCell.setMine(false);
+        tempChr = _cellString[flagIndex];
+        if(!tempChr.isDigit()) throw QString(lang->at(Language::getIndex("readingError")));
+        tempCell.setFlag(tempChr.digitValue());
+        tempChr = _cellString[openIndex];
+        if(!tempChr.isDigit()) throw QString(lang->at(Language::getIndex("readingError")));
+        tempCell.setOpen(tempChr.digitValue());
+    }
+    return tempCell;
+}
+
+void GameArea::setSmileEnable(bool _isEnable)
+{
+    ui->smile->setEnabled(_isEnable);
+    isSmileActive=_isEnable;
+}
+
+void GameArea::setSaved(bool _isSaved)
+{
+    ui->saveButton->setDisabled(_isSaved);
+    isSaved=_isSaved;
+}
+
 void GameArea::stopField()
 {
     LCDtimer->stop();
-    for(auto &i:buttons){
-        for(auto &j:i){
-            j->setDisabled(true);
-        }
-    }
-    ui->saveButton->setDisabled(true);
+    setSaved(true);
 }
 
 void GameArea::defaultButtonsArray()
@@ -127,40 +206,40 @@ void GameArea::setDefaultVariables()
 {
     isFlag=false;
     isStartTimer=false;
-    isSaved=true;
-    if(isRead){
-        LCDtimer->start(1000);
-    }
+    if(isRead)LCDtimer->start(1000);
     else timeElapsed=0;
-    ui->saveButton->setDisabled(true);
+    setSaved(true);
     isGameEnded=false;
     isFirstMove=!isRead;
     availableFlags=mines;
+    setSmileEnable(isRead);
 }
 
 void GameArea::flagAction(int _x, int _y, QPushButton *_btn)
 {
+    static QIcon emptyIcon;
     if(!availableFlags && !field.getMatrix()[_x][_y].getFlag())return;
     if(isRead){
         availableFlags--;
         field.getMatrix()[_x][_y].setFlag(true);
-        _btn->setStyleSheet(StyleHandler::getFlagStyle());
+        _btn->setIcon(StyleHandler::getFlagStyle());
     }else{
         ui->minesLeft->display(field.getMatrix()[_x][_y].getFlag()?++availableFlags:--availableFlags);
         field.getMatrix()[_x][_y].setFlag(!field.getMatrix()[_x][_y].getFlag());
-        _btn->setStyleSheet(field.getMatrix()[_x][_y].getFlag()?StyleHandler::getFlagStyle():StyleHandler::getDefaultCellStyle());
+        _btn->setIcon(field.getMatrix()[_x][_y].getFlag()?StyleHandler::getFlagStyle():emptyIcon);
     }
+    _btn->setIconSize(_btn->size());
 }
-
-
 
 void GameArea::openAction(int _x, int _y)
 {
-    if(field.getMatrix()[_x][_y].getMine()){
-        loseByMine();
-        return;
+    if(!field.getMatrix()[_x][_y].getFlag()){
+        if(field.getMatrix()[_x][_y].getMine()){
+            loseByMine();
+            return;
+        }
+        field.openCell(field.getMatrix()[_x][_y], buttons);
     }
-    field.openCell(field.getMatrix()[_x][_y], buttons);
 }
 
 void GameArea::setMainAreaPointer(MainArea *_mainArea)
@@ -170,14 +249,13 @@ void GameArea::setMainAreaPointer(MainArea *_mainArea)
 
 void GameArea::openReadCells()
 {
-    for(auto&i:field.getMatrix()){
+    for(auto&i:field.getMatrix())
         for(auto&j:i){
             if(j.getOpen())field.openCell(j,buttons);
             if(j.getFlag()){
                 flagAction(j.getLocation().x, j.getLocation().y, buttons[j.getLocation().x][j.getLocation().y]);
             }
         }
-    }
     isRead=false;
     ui->minesLeft->display(availableFlags);
 }
@@ -189,11 +267,16 @@ void GameArea::setSmileState(bool _isLose)
 
 void GameArea::firstMove(int _x, int _y)
 {
-    field = createField(rows,cols,mines,_x,_y);
-    isFirstMove = false;
-    isStartTimer=true;
-    LCDtimer->start(1000);
-    ui->saveButton->setDisabled(false);
+    if(!isFlag){
+        field = createField(rows,cols,mines,_x,_y);
+        isFirstMove = false;
+        isStartTimer=true;
+        setSmileEnable(true);
+        LCDtimer->start(1000);
+        setSaved(false);
+        field.openCell(field.getMatrix()[_x][_y], buttons);
+    }
+    else QMessageBox::warning(this, lang->at(Language::getIndex("mineSweeper")), lang->at(Language::getIndex("firstMoveFlag")));
 }
 
 void GameArea::setStyles()
@@ -203,15 +286,15 @@ void GameArea::setStyles()
     ui->timePassed->setStyleSheet(StyleHandler::getTimerStyle());
     ui->minesLeft->setStyleSheet(StyleHandler::getTimerStyle());
     this->setStyleSheet(StyleHandler::getBGStyle());
+    this->setWindowIcon(QIcon(":/img/img/logo.png"));
 }
 
 void GameArea::clearField()
 {
     QLayoutItem *item;
     while ((item = ui->playField->takeAt(0)) != nullptr) {
-        if (QWidget *widget = item->widget()) {
+        if (QWidget *widget = item->widget())
             widget->deleteLater();
-        }
         delete item;
     }
 }
@@ -231,14 +314,11 @@ QPalette GameArea::getPaletteForLCDNumber()
     return palet;
 }
 
-Field GameArea::createField(int _rows, int _cols, int _mines, int xStart, int yStart, QVector<QVector<Cell> > _matrix)
+Field GameArea::createField(int _rows, int _cols, int _mines, int xStart, int yStart)
 {
-    bool isFieldDefault=Field::isMatrixDefault(_matrix);
     Field tempField(_rows, _cols, _mines);
     do{
-        if(!isFieldDefault)break;
-        _matrix=generateMatrix(_rows, _cols, _mines);
-        tempField.setMatrix(_matrix);
+        tempField.setMatrix(generateMatrix(_rows, _cols, _mines));
         tempField.fillFieldWithNumbers();
     }while(tempField.getMatrix()[xStart][yStart].getAdjacentMines());
     return tempField;
@@ -246,9 +326,6 @@ Field GameArea::createField(int _rows, int _cols, int _mines, int xStart, int yS
 
 Field GameArea::readMatrixFromFile()
 {
-    const int adjacentMinesIndex = 0;
-    const int flagIndex = 2;
-    const int openIndex = 4;
     const int rowIndex = 0;
     const int colIndex = 1;
     QVector<QVector<Cell>> matrix;
@@ -259,48 +336,26 @@ Field GameArea::readMatrixFromFile()
     if(file.open(QIODevice::ReadOnly)){
         QTextStream text(&file);
         QStringList rowsCols = text.readLine().split(':', Qt::SkipEmptyParts);
-        if(rowsCols.size()!=2){
-            throw QString(lang->at(Language::getIndex("readingError")));
-        }
+        if(rowsCols.size()!=2) throw QString(lang->at(Language::getIndex("readingError")));
         rows = rowsCols[rowIndex].toInt();
         cols = rowsCols[colIndex].toInt();
-        matrix.resize(rows);
         rowsCols.clear();
         rowsCols = text.readLine().split(' ', Qt::SkipEmptyParts);
-        if(rowsCols.size()!=1){
-            throw QString(lang->at(Language::getIndex("readingError")));
-        }
+        if(rowsCols.size()!=1) throw QString(lang->at(Language::getIndex("readingError")));
         timeElapsed = rowsCols[0].toInt();
         while(!text.atEnd()){
             rowString = text.readLine().split(' ', Qt::SkipEmptyParts);
-            if(rowString.size()!=cols){
+            if(rowString.size()!=cols) throw QString(lang->at(Language::getIndex("readingError")));
+            try{
+                matrix.push_back(getRow(rowString, currentRow, cols, mines));
+            }catch(...){
                 throw QString(lang->at(Language::getIndex("readingError")));
             }
-            Cell tempCell;
-            for(int i = 0; i < cols; ++i){
-                tempCell.setLocation({currentRow, i});
-                if(rowString[i].size()==6){
-                    tempCell.setAdjacentMines(-1);
-                    tempCell.setMine(true);
-                    tempCell.setFlag(rowString[i][flagIndex+1].digitValue());
-                    tempCell.setOpen(rowString[i][openIndex+1].digitValue());
-                    mines++;
-                }else{
-                    tempCell.setAdjacentMines(rowString[i][adjacentMinesIndex].digitValue());
-                    tempCell.setMine(false);
-                    tempCell.setFlag(rowString[i][flagIndex].digitValue());
-                    tempCell.setOpen(rowString[i][openIndex].digitValue());
-                }
-                matrix[currentRow].push_back(tempCell);
-            }
+
             currentRow++;
-            if(currentRow>rows){
-                throw QString(lang->at(Language::getIndex("readingError")));
-            }
+            if(currentRow>rows) throw QString(lang->at(Language::getIndex("readingError")));
         }
-    }else{
-        throw QString(lang->at(Language::getIndex("readingError")));
-    }
+    }else throw QString(lang->at(Language::getIndex("readingError")));
     file.close();
     return Field(rows,cols,mines,matrix);
 }
@@ -309,12 +364,9 @@ QVector<QVector<Cell>> GameArea::generateMatrix(int _rows, int _cols, int _mines
 {
     QVector<QVector<Cell>> matrix(_rows);
     for(auto &i:matrix)i.resize(_cols);
-
-    for(int i = 0; i < _rows; ++i){
-        for(int j = 0; j < _cols; ++j){
+    for(int i = 0; i < _rows; ++i)
+        for(int j = 0; j < _cols; ++j)
             matrix[i][j].setLocation(Coordinate{i, j});
-        }
-    }
     int x, y;
     while(_mines){
         x = rand()%_rows;
@@ -331,35 +383,24 @@ GameArea::~GameArea()
 {
     clearField();
     delete LCDtimer;
-    for(int i = 0; i < field.getRows(); ++i)
-        for(int j = 0; j < field.getCols(); ++j)
-            delete buttons[i][j];
     delete ui;
 }
 
 void GameArea::cellClick()
 {
+    if(isGameEnded)return;
     auto btn = qobject_cast<QPushButton*>(sender());
     int x = btn->property("X").toInt();
     int y = btn->property("Y").toInt();
-    if(isFirstMove && isFlag){
-        QMessageBox::warning(this, lang->at(Language::getIndex("mineSweeper")), lang->at(Language::getIndex("firstMoveFlag")));
+    if(isFirstMove){
+        firstMove(x,y);
         return;
     }
-    if(isFirstMove && !isFlag){
-        firstMove(x,y);
-    }
     if(!field.getMatrix()[x][y].getOpen()){
-        if(isSaved){
-            ui->saveButton->setDisabled(false);
-            isSaved=false;
-        }
-        if(isFlag){
-            flagAction(x, y, buttons[x][y]);
-        }else if(!isFlag && !field.getMatrix()[x][y].getFlag()){
-            openAction(x, y);
-        }
-        if(!isGameEnded && winCondition())win();
+        if(isSaved) setSaved(false);
+        if(isFlag)flagAction(x, y, buttons[x][y]);
+        else openAction(x, y);
+        if(!isGameEnded && !availableFlags && winCondition())win();
     }
 }
 
@@ -374,33 +415,30 @@ void GameArea::updateTime()
 {
     ++timeElapsed;
     Times times = Times::getTime(timeElapsed);
-
     QString timeString = QString("%1:%2:%3")
                              .arg(times.getHours(), 2, 10, QChar('0'))
                              .arg(times.getMinutes(), 2, 10, QChar('0'))
                              .arg(times.getSeconds(), 2, 10, QChar('0'));
-
     ui->timePassed->display(timeString);
 }
 
 void GameArea::smileClick()
 {
+    qDebug() << "smile";
     LCDtimer->stop();
     if(!isFirstMove && !isGameEnded && !isSaved){
-        QMessageBox msgBox;
-        msgBox.setWindowTitle(lang->at(Language::getIndex("mineSweeper")));
-        msgBox.setText(lang->at(Language::getIndex("wannaSaveQuestion")));
-        msgBox.addButton(lang->at(Language::getIndex("save")), QMessageBox::ActionRole);
-        msgBox.addButton(lang->at(Language::getIndex("createNoSave")), QMessageBox::ActionRole);
-        msgBox.addButton(lang->at(Language::getIndex("cancel")), QMessageBox::ActionRole);
-        int ret = msgBox.exec();
+        QMessageBox* msgBox = getThreeButtonWindow(lang->at(Language::getIndex("wannaSaveQuestion")), lang->at(Language::getIndex("save")), lang->at(Language::getIndex("createNoSave")), lang->at(Language::getIndex("cancel")));
+        int ret = msgBox->exec();
         if(ret==2){
             LCDtimer->start();
             return;
         }
         if(!ret)saveClick();
+        delete msgBox;
     }
+    QPoint point = this->pos();
     spawnField();
+    centerWindow(point);
     setDefaultSettings();
 }
 
@@ -423,8 +461,7 @@ void GameArea::saveClick()
     }
     else qWarning("Could not open file");
     file.close();
-    isSaved=true;
-    ui->saveButton->setDisabled(true);
+    setSaved(true);
     auto ans = QMessageBox::information(this, lang->at(Language::getIndex("mineSweeper")), lang->at(Language::getIndex("successSave")));
     if(ans==QMessageBox::StandardButton::Ok || ans == QMessageBox::StandardButton::Close)LCDtimer->start();
 }
@@ -433,18 +470,14 @@ void GameArea::backToMenuClick()
 {
     LCDtimer->stop();
     if(!isFirstMove && !isGameEnded && !isSaved){
-        QMessageBox msgBox;
-        msgBox.setWindowTitle(lang->at(Language::getIndex("mineSweeper")));
-        msgBox.setText(lang->at(Language::getIndex("wannaSaveQuestion")));
-        msgBox.addButton(lang->at(Language::getIndex("save")), QMessageBox::ActionRole);
-        msgBox.addButton(lang->at(Language::getIndex("exitNoSave")), QMessageBox::ActionRole);
-        msgBox.addButton(lang->at(Language::getIndex("cancel")), QMessageBox::ActionRole);
-        int ret = msgBox.exec();
+        QMessageBox* msgBox = getThreeButtonWindow(lang->at(Language::getIndex("wannaSaveQuestion")), lang->at(Language::getIndex("save")), lang->at(Language::getIndex("exitNoSave")), lang->at(Language::getIndex("cancel")));
+        int ret = msgBox->exec();
         if(ret==2){
             LCDtimer->start();
             return;
         }
         if(!ret)saveClick();
+        delete msgBox;
     }
     this->close();
     clearField();

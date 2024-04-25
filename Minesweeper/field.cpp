@@ -43,7 +43,6 @@ void Field::crossZeros(QVector<QVector<QPushButton*>> _buttons, Cell& _cell)
 
                 if (!matrix[newX][newY].getOpen()) {
                     matrix[newX][newY].openCell(_buttons[newX][newY]);
-
                     if (!matrix[newX][newY].getAdjacentMines())
                         stack.push(matrix[newX][newY]);
                 }
@@ -77,18 +76,12 @@ int Field::getMinesAround(Cell _cell)
     int x = _cell.getLocation().x;
     int y = _cell.getLocation().y;
     int count = 0;
-    int numRows = matrix.size();
-    int numCols = matrix[0].size();
-
     for (int i = -1; i <= 1; ++i) {
         for (int j = -1; j <= 1; ++j) {
             int newX = x + i;
             int newY = y + j;
-
-            if (newX >= 0 && newX < numRows && newY >= 0 && newY < numCols) {
-                if (matrix[newX][newY].getMine()) {
-                    count++;
-                }
+            if ((i || j) && isValid(newX, newY) && matrix[newX][newY].getMine()) {
+                count++;
             }
         }
     }
@@ -122,15 +115,4 @@ void Field::setMatrix(QVector<QVector<Cell> > _matrix)
 QVector<QVector<Cell>>& Field::getMatrix()
 {
     return matrix;
-}
-
-bool Field::isMatrixDefault(QVector<QVector<Cell>>& _matrix)
-{
-    for (auto &row : _matrix) {
-        for (auto &cell : row) {
-            if (cell != Cell())
-                return false;
-        }
-    }
-    return true;
 }
