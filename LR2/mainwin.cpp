@@ -37,7 +37,7 @@ void MainWindow::on_addFruitBtn_clicked()
 {
     if(ui->inputLabel->text()==QString())return;
     favoriteFruits.push_back(ui->inputLabel->text());
-    qDebug() << ui->inputLabel->text() << " успішно доданий!";
+    qDebug() << ui->inputLabel -> text() << " успішно доданий!";
     ui->inputLabel->clear();
 }
 
